@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma" 
 
-const MOCKED_PASS = "fodassefodasse"
+const MOCKED_PASS = "caderno@batata"
 
 export async function submitQuote(data: { quote: string; author: string; password: string }) {
   // Validação
