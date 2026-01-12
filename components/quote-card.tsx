@@ -1,32 +1,42 @@
-"use client"
+"use client";
 
-import { motion } from "framer-motion"
-import type { Quote } from "@/lib/quotes-data"
-import { useState } from "react"
+import { motion } from "framer-motion";
+import type { Quote } from "@/lib/quotes-data";
+import { useState } from "react";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Share2 } from "lucide-react"
+import { Share2 } from "lucide-react";
+import { addReaction } from "@/lib/actions/Quote Actions/add-reaction-action";
 
 interface QuoteCardProps {
-  quote: Quote
-  index: number
+  quote: Quote;
+  index: number;
 }
 
-const cardBackgrounds = ["bg-white", "bg-[#FFF8DC]", "bg-[#F0FFF0]", "bg-[#FFF0F5]", "bg-[#F0F8FF]"]
+const cardBackgrounds = [
+  "bg-white",
+  "bg-[#FFF8DC]",
+  "bg-[#F0FFF0]",
+  "bg-[#FFF0F5]",
+  "bg-[#F0F8FF]",
+];
 
 export function QuoteCard({ quote, index }: QuoteCardProps) {
-  const [reactions, setReactions] = useState(quote.reactions)
-  const [clickedReaction, setClickedReaction] = useState<string | null>(null)
+  const [reactions, setReactions] = useState(quote.reactions);
+  const [clickedReaction, setClickedReaction] = useState<string | null>(null);
 
-  const bgColor = cardBackgrounds[index % cardBackgrounds.length]
+  const bgColor = cardBackgrounds[index % cardBackgrounds.length];
 
-  const handleReaction = (type: "potato" | "fire" | "skull" | "pen" ) => {
+  const handleReaction = async (type: keyof typeof reactions) => {
     setReactions((prev) => ({
       ...prev,
       [type]: prev[type] + 1,
-    }))
-    setClickedReaction(type)
-    setTimeout(() => setClickedReaction(null), 300)
-  }
+    }));
+
+    setClickedReaction(type as string);
+    setTimeout(() => setClickedReaction(null), 300);
+
+    await addReaction(quote.id, type);
+  };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleShare = () => {
@@ -34,9 +44,9 @@ export function QuoteCard({ quote, index }: QuoteCardProps) {
       navigator.share({
         title: "Caderno Batata",
         text: `"${quote.text}" - ${quote.author}`,
-      })
+      });
     }
-  }
+  };
 
   return (
     <motion.div
@@ -46,15 +56,18 @@ export function QuoteCard({ quote, index }: QuoteCardProps) {
       transition={{ delay: index * 0.05 }}
       whileHover={{ y: -4, boxShadow: "6px 6px 0px 0px #000" }}
     >
-
       {/* Quote Text */}
-      <p className="text-xl font-bold text-black mb-6 leading-tight grow">&quot;{quote.text}&quot;</p>
+      <p className="text-xl font-bold text-black mb-6 leading-tight grow">
+        &quot;{quote.text}&quot;
+      </p>
 
       {/* Footer: Author & Date */}
       <div className="border-t-[3px] border-black pt-4 mb-4">
         <div className="flex items-center justify-between">
           <span className="font-bold text-black text-lg">— {quote.author}</span>
-          <span className="font-mono text-sm text-black">{new Date(quote.date).toLocaleDateString("pt-BR")}</span>
+          <span className="font-mono text-sm text-black">
+            {new Date(quote.date).toLocaleDateString("pt-BR")}
+          </span>
         </div>
       </div>
 
@@ -101,5 +114,5 @@ export function QuoteCard({ quote, index }: QuoteCardProps) {
         </motion.button> */}
       </div>
     </motion.div>
-  )
+  );
 }
