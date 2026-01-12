@@ -5,9 +5,8 @@ import type { Quote } from "@/lib/quotes-data";
 import { useState, useRef } from "react";
 import { Share2, Loader2 } from "lucide-react";
 import { addReaction } from "@/lib/actions/Quote Actions/add-reaction-action";
-import Link from "next/link"; // Importante para o modal funcionar
+import Link from "next/link";
 
-// Bibliotecas para gerar a imagem
 import * as htmlToImage from "html-to-image";
 import download from "downloadjs";
 
@@ -24,28 +23,52 @@ const cardBackgrounds = [
   "bg-[#F0F8FF]", 
 ];
 
+// --- FUNÇÃO AUXILIAR DE TEMPO RELATIVO ---
+function getRelativeTime(dateString: string) {
+  const date = new Date(dateString);
+  const now = new Date();
+  
+  // Diferença em milissegundos
+  const diffInMs = now.getTime() - date.getTime();
+  
+  // Converte para dias totais (arredondando para baixo)
+  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+  if (diffInDays < 0) return "Do futuro 🔮"; // Só pra garantir
+  if (diffInDays === 0) return "Hoje";
+  if (diffInDays === 1) return "Ontem";
+
+  // Menos de 1 mês (30 dias)
+  if (diffInDays < 30) {
+    const weeks = Math.floor(diffInDays / 7);
+    if (weeks > 0) return `Há ${weeks} semana${weeks > 1 ? 's' : ''}`;
+    return `Há ${diffInDays} dia${diffInDays > 1 ? 's' : ''}`;
+  }
+
+  // Menos de 1 ano (365 dias)
+  if (diffInDays < 365) {
+    // Usamos 30.44 (média exata de dias/mês) para corrigir a distorção
+    const months = Math.floor(diffInDays / 30.44);
+    return `Há ${months} m${months > 1 ? 'eses' : 'ês'}`;
+  }
+
+  // Anos
+  const years = Math.floor(diffInDays / 365.25); // Conta bissexto
+  return `Há ${years} ano${years > 1 ? 's' : ''}`;
+}
+// ------------------------------------------
+
 export function QuoteCard({ quote, index }: QuoteCardProps) {
   const [reactions, setReactions] = useState(quote.reactions);
   const [clickedReaction, setClickedReaction] = useState<string | null>(null);
-  
   const [isSharing, setIsSharing] = useState(false);
-  
-  // Referência para focar a câmera do print
   const cardRef = useRef<HTMLDivElement>(null);
-
   const bgColor = cardBackgrounds[index % cardBackgrounds.length];
 
   const handleReaction = async (type: keyof typeof reactions) => {
-    // Atualização otimista
-    setReactions((prev) => ({
-      ...prev,
-      [type]: prev[type] + 1,
-    }));
-
+    setReactions((prev) => ({ ...prev, [type]: prev[type] + 1 }));
     setClickedReaction(type as string);
     setTimeout(() => setClickedReaction(null), 300);
-
-    // Salva no servidor
     await addReaction(quote.id, type);
   };
 
@@ -53,7 +76,6 @@ export function QuoteCard({ quote, index }: QuoteCardProps) {
     if (cardRef.current === null || isSharing) return;
     setIsSharing(true);
 
-    // Cria a URL específica e a legenda
     const shareUrl = `https://cadernobatata.vercel.app/quote/${quote.id}`;
     const caption = `🥔 Dá uma olhada nessa frase!\n\n"${quote.text}" — ${quote.author}\n\nVeja mais em: ${shareUrl}`;
 
@@ -67,16 +89,8 @@ export function QuoteCard({ quote, index }: QuoteCardProps) {
       if (!blob) throw new Error("Falha ao gerar imagem");
       const file = new File([blob], `batata-${quote.id}.png`, { type: 'image/png' });
 
-      // Tenta compartilhar nativo
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        
-        try {
-           await navigator.clipboard.writeText(caption);
-        } catch (err) {
-           console.log("Não foi possível copiar a legenda automaticamente no mobile", err);
-        }
-        // -----------------------------------
-
+        try { await navigator.clipboard.writeText(caption); } catch (err) { console.log(err); }
         await navigator.share({
           files: [file],
           title: "Caderno Batata",
@@ -84,20 +98,14 @@ export function QuoteCard({ quote, index }: QuoteCardProps) {
           url: shareUrl, 
         });
       } else {
-        // Fallback para PC (Download + Copy)
         download(blob, `batata-${quote.author.toLowerCase().replace(/\s/g, "-")}.png`);
         await navigator.clipboard.writeText(caption);
-        alert("Imagem baixada e legenda copiada para a área de transferência! 🥔");
+        alert("Imagem baixada e legenda copiada! 🥔");
       }
     } catch (error) {
       console.error("Erro ao gerar imagem:", error);
-      // Fallback final: Compartilha só o texto se a imagem falhar
       if (navigator.share) {
-         navigator.share({
-            title: "Caderno Batata",
-            text: caption,
-            url: shareUrl
-         });
+         navigator.share({ title: "Caderno Batata", text: caption, url: shareUrl });
       }
     } finally {
       setIsSharing(false);
@@ -106,42 +114,43 @@ export function QuoteCard({ quote, index }: QuoteCardProps) {
 
   return (
     <motion.div
-      ref={cardRef} // A câmera aponta pra cá (todo o card)
+      ref={cardRef}
       className={`${bgColor} border-[3px] border-black neo-shadow p-6 flex flex-col break-inside-avoid mb-6 relative`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
       whileHover={{ y: -4, boxShadow: "6px 6px 0px 0px #000" }}
     >
-       {/* Marca d'água discreta */}
        <div className="absolute top-2 right-2 opacity-20 font-black text-[10px] pointer-events-none select-none font-mono tracking-widest">
         CADERNO BATATA
       </div>
       
-      {/* LINK PARA O MODAL (Intercepting Route)
-         Envolve o Texto e o Autor. Botões ficam de fora para não ativar o link ao curtir.
-      */}
       <Link href={`/quote/${quote.id}`} scroll={false} className="grow flex flex-col cursor-pointer hover:opacity-80 transition-opacity">
         
-        {/* Quote Text */}
         <p className="mt-3 text-xl font-bold text-black mb-6 leading-tight grow z-10">
           &quot;{quote.text}&quot;
         </p>
 
-        {/* Footer: Author & Date */}
+        {/* Footer Atualizado */}
         <div className="border-t-[3px] border-black pt-4 mb-4 z-10">
-          <div className="flex items-center justify-between">
+          <div className="flex justify-between items-end">
+            {/* Autor na esquerda */}
             <span className="font-bold text-black text-lg font-sans">— {quote.author}</span>
-            <span className="font-mono text-sm text-black">
-              {new Date(quote.date).toLocaleDateString("pt-BR")}
-            </span>
+            
+            {/* Data na direita (Coluna com Tempo Relativo em cima) */}
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest mb-0.5">
+                {getRelativeTime(quote.date)}
+              </span>
+              <span className="font-mono text-sm text-black">
+                {new Date(quote.date).toLocaleDateString("pt-BR")}
+              </span>
+            </div>
           </div>
         </div>
 
       </Link>
 
-      {/* Action Bar: Reactions */}
-      {/* 'data-html2canvas-ignore' faz essa div ser INVISÍVEL no print */}
       <div className="flex items-center justify-between gap-2 flex-wrap" data-html2canvas-ignore="true">
         <div className="flex gap-2">
           <ReactionButton 
@@ -151,30 +160,11 @@ export function QuoteCard({ quote, index }: QuoteCardProps) {
             onClick={() => handleReaction("potato")}
             color="bg-primary"
           />
-          {/* <ReactionButton 
-            emoji="🔥" 
-            count={reactions.fire} 
-            isActive={clickedReaction === "fire"}
-            onClick={() => handleReaction("fire")}
-            color="bg-[#ffdddd]"
-          />
-          <ReactionButton 
-            emoji="💀" 
-            count={reactions.skull} 
-            isActive={clickedReaction === "skull"}
-            onClick={() => handleReaction("skull")}
-            color="bg-[#eeeeee]"
-          />
-          <ReactionButton 
-            emoji="✍️" 
-            count={reactions.pen} 
-            isActive={clickedReaction === "pen"}
-            onClick={() => handleReaction("pen")}
-            color="bg-[#e0f2fe]"
-          /> */}
+          {/* <ReactionButton emoji="🔥" count={reactions.fire} isActive={clickedReaction === "fire"} onClick={() => handleReaction("fire")} color="bg-[#ffdddd]" /> */}
+          {/* <ReactionButton emoji="💀" count={reactions.skull} isActive={clickedReaction === "skull"} onClick={() => handleReaction("skull")} color="bg-[#eeeeee]" /> */}
+          {/* <ReactionButton emoji="✍️" count={reactions.pen} isActive={clickedReaction === "pen"} onClick={() => handleReaction("pen")} color="bg-[#e0f2fe]" /> */}
         </div>
 
-        {/* Botão de Smart Share */}
         <motion.button
           onClick={handleSmartShare}
           disabled={isSharing}
