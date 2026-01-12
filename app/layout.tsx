@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono, Archivo_Black } from "next/font/google"
 import "./globals.css"
 
@@ -11,6 +11,14 @@ const _archivoBlack = Archivo_Black({
   subsets: ["latin"],
   variable: "--font-display",
 })
+
+export const viewport: Viewport = {
+  themeColor: "#FFD700", 
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1, 
+  userScalable: false,
+};
 
 export const metadata: Metadata = {
   title: "Caderno Batata",
