@@ -2,10 +2,14 @@
 
 import { motion } from "framer-motion";
 import type { Quote } from "@/lib/quotes-data";
-import { useState } from "react";
+import { useState, useRef } from "react";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Share2 } from "lucide-react";
+import { Share2, Loader2, Download } from "lucide-react";
 import { addReaction } from "@/lib/actions/Quote Actions/add-reaction-action";
+
+// Bibliotecas para gerar a imagem
+import * as htmlToImage from "html-to-image";
+import download from "downloadjs";
 
 interface QuoteCardProps {
   quote: Quote;
@@ -14,15 +18,20 @@ interface QuoteCardProps {
 
 const cardBackgrounds = [
   "bg-white",
-  "bg-[#FFF8DC]",
-  "bg-[#F0FFF0]",
-  "bg-[#FFF0F5]",
-  "bg-[#F0F8FF]",
+  "bg-[#FFF8DC]", 
+  "bg-[#F0FFF0]", 
+  "bg-[#FFF0F5]", 
+  "bg-[#F0F8FF]", 
 ];
 
 export function QuoteCard({ quote, index }: QuoteCardProps) {
   const [reactions, setReactions] = useState(quote.reactions);
   const [clickedReaction, setClickedReaction] = useState<string | null>(null);
+  
+  const [isSharing, setIsSharing] = useState(false);
+  
+  // Referência para focar a câmera do print
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const bgColor = cardBackgrounds[index % cardBackgrounds.length];
 
@@ -38,33 +47,67 @@ export function QuoteCard({ quote, index }: QuoteCardProps) {
     await addReaction(quote.id, type);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: "Caderno Batata",
-        text: `"${quote.text}" - ${quote.author}`,
+  const handleSmartShare = async () => {
+    if (cardRef.current === null || isSharing) return;
+    setIsSharing(true);
+
+    try {
+      // gera o BLOB para tentar compartilhar nativo
+      const blob = await htmlToImage.toBlob(cardRef.current, {
+        quality: 1.0,
+        backgroundColor: '#fff', // fundo branco/correto
+        pixelRatio: 2, // Alta resolução
       });
+
+      if (!blob) throw new Error("Falha ao gerar imagem");
+
+      const file = new File([blob], `batata-${quote.id}.png`, { type: 'image/png' });
+
+      // Tenta compartilhar nativo (Celular: Zap, Insta, etc)
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: "Caderno Batata",
+          text: `"${quote.text}" — ${quote.author}`,
+          files: [file],
+        });
+      } else {
+        // Baixa a imagem se não der pra compartilhar
+        download(blob, `batata-${quote.author.toLowerCase().replace(/\s/g, "-")}.png`);
+      }
+
+    } catch (error) {
+      console.error("Erro ao compartilhar imagem:", error);
+      // se der errado, copia só o texto
+      navigator.clipboard.writeText(`"${quote.text}" — ${quote.author} \n\nConfira no Caderno Batata!`);
+      alert("Imagem falhou, mas copiei o texto para você!");
+    } finally {
+      setIsSharing(false);
     }
   };
 
   return (
     <motion.div
-      className={`${bgColor} border-[3px] border-black neo-shadow p-6 flex flex-col break-inside-avoid mb-6`}
+      ref={cardRef} // <--- A câmera aponta pra cá
+      className={`${bgColor} border-[3px] border-black neo-shadow p-6 flex flex-col break-inside-avoid mb-6 relative`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
       whileHover={{ y: -4, boxShadow: "6px 6px 0px 0px #000" }}
     >
+       {/* Marca d'água discreta */}
+       <div className="absolute top-2 right-2 opacity-20 font-black text-[10px] pointer-events-none select-none font-mono tracking-widest">
+        CADERNO BATATA
+      </div>
+
       {/* Quote Text */}
-      <p className="text-xl font-bold text-black mb-6 leading-tight grow">
+      <p className="mt-3 text-xl font-bold text-black mb-6 leading-tight grow z-10">
         &quot;{quote.text}&quot;
       </p>
 
       {/* Footer: Author & Date */}
-      <div className="border-t-[3px] border-black pt-4 mb-4">
+      <div className="border-t-[3px] border-black pt-4 mb-4 z-10">
         <div className="flex items-center justify-between">
-          <span className="font-bold text-black text-lg">— {quote.author}</span>
+          <span className="font-bold text-black text-lg font-sans">— {quote.author}</span>
           <span className="font-mono text-sm text-black">
             {new Date(quote.date).toLocaleDateString("pt-BR")}
           </span>
@@ -72,47 +115,72 @@ export function QuoteCard({ quote, index }: QuoteCardProps) {
       </div>
 
       {/* Action Bar: Reactions */}
-      <div className="flex items-center justify-between gap-2">
+      {/* 'data-html2canvas-ignore' faz essa div ser INVISÍVEL no print */}
+      <div className="flex items-center justify-between gap-2 flex-wrap" data-html2canvas-ignore="true">
         <div className="flex gap-2">
-          <motion.button
+          <ReactionButton 
+            emoji="🥔" 
+            count={reactions.potato} 
+            isActive={clickedReaction === "potato"}
             onClick={() => handleReaction("potato")}
-            className="bg-primary border-2 border-black px-3 py-2 font-bold hover:-translate-y-0.5 transition-all"
-            whileTap={{ scale: clickedReaction === "potato" ? 1.3 : 0.95 }}
-          >
-            🥔 {reactions.potato}
-          </motion.button>
-          {/* <motion.button
+            color="bg-primary"
+          />
+          {/* <ReactionButton 
+            emoji="🔥" 
+            count={reactions.fire} 
+            isActive={clickedReaction === "fire"}
             onClick={() => handleReaction("fire")}
-            className="bg-secondary border-2 border-black px-3 py-2 font-bold hover:-translate-y-0.5 transition-all"
-            whileTap={{ scale: clickedReaction === "fire" ? 1.3 : 0.95 }}
-          >
-            🔥 {reactions.fire}
-          </motion.button>
-          <motion.button
+            color="bg-[#ffdddd]"
+          />
+          <ReactionButton 
+            emoji="💀" 
+            count={reactions.skull} 
+            isActive={clickedReaction === "skull"}
             onClick={() => handleReaction("skull")}
-            className="bg-muted border-2 border-black px-3 py-2 font-bold hover:-translate-y-0.5 transition-all"
-            whileTap={{ scale: clickedReaction === "skull" ? 1.3 : 0.95 }}
-          >
-            💀 {reactions.skull}
-          </motion.button>
-          <motion.button
+            color="bg-[#eeeeee]"
+          />
+          <ReactionButton 
+            emoji="✍️" 
+            count={reactions.pen} 
+            isActive={clickedReaction === "pen"}
             onClick={() => handleReaction("pen")}
-            className="bg-muted border-2 border-black px-3 py-2 font-bold hover:-translate-y-0.5 transition-all"
-            whileTap={{ scale: clickedReaction === "pen" ? 1.3 : 0.95 }}
-          >
-            ✍️ {reactions.pen}
-          </motion.button> */}
+            color="bg-[#e0f2fe]"
+          /> */}
         </div>
 
-        {/* <motion.button
-          onClick={handleShare}
-          className="bg-accent border-2] border-black p-2 hover:-translate-y-0.5 transition-all"
+        {/* Botão de Smart Share */}
+        <motion.button
+          onClick={handleSmartShare}
+          disabled={isSharing}
+          className="bg-[#FFD700] border-2 border-black p-2 hover:-translate-y-0.5 transition-all min-w-10 flex items-center justify-center"
           whileHover={{ rotate: 15 }}
           whileTap={{ scale: 0.95 }}
+          title="Gerar imagem e compartilhar"
         >
-          <Share2 className="w-5 h-5 text-black" />
-        </motion.button> */}
+          {isSharing ? (
+            <Loader2 className="w-5 h-5 text-black animate-spin" />
+          ) : (
+            // Ícone muda dependendo se é mobile (Share) ou PC (Download) visualmente, 
+            // mas deixei Share2 como padrão pois tenta compartilhar primeiro
+            <Share2 className="w-5 h-5 text-black" />
+          )}
+        </motion.button>
       </div>
     </motion.div>
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function ReactionButton({ emoji, count, onClick, isActive, color }: any) {
+  return (
+    <motion.button
+      onClick={onClick}
+      className={`${color} border-2 border-black px-2 py-1 md:px-3 md:py-2 font-bold hover:-translate-y-0.5 transition-all text-sm md:text-base flex items-center gap-1`}
+      whileTap={{ scale: 1.2 }}
+      animate={isActive ? { scale: [1, 1.2, 1] } : {}}
+    >
+      <span>{emoji}</span>
+      <span className="font-mono">{count}</span>
+    </motion.button>
   );
 }
