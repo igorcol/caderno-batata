@@ -3,9 +3,9 @@
 import { motion } from "framer-motion";
 import type { Quote } from "@/lib/quotes-data";
 import { useState, useRef } from "react";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Share2, Loader2, Download } from "lucide-react";
+import { Share2, Loader2 } from "lucide-react";
 import { addReaction } from "@/lib/actions/Quote Actions/add-reaction-action";
+import Link from "next/link"; // Importante para o modal funcionar
 
 // Bibliotecas para gerar a imagem
 import * as htmlToImage from "html-to-image";
@@ -36,6 +36,7 @@ export function QuoteCard({ quote, index }: QuoteCardProps) {
   const bgColor = cardBackgrounds[index % cardBackgrounds.length];
 
   const handleReaction = async (type: keyof typeof reactions) => {
+    // Atualização otimista
     setReactions((prev) => ({
       ...prev,
       [type]: prev[type] + 1,
@@ -44,6 +45,7 @@ export function QuoteCard({ quote, index }: QuoteCardProps) {
     setClickedReaction(type as string);
     setTimeout(() => setClickedReaction(null), 300);
 
+    // Salva no servidor
     await addReaction(quote.id, type);
   };
 
@@ -51,7 +53,7 @@ export function QuoteCard({ quote, index }: QuoteCardProps) {
     if (cardRef.current === null || isSharing) return;
     setIsSharing(true);
 
-    // Texto padrão da legenda
+    // Texto da legenda turbinado com Link
     const caption = `🥔 Dá uma olhada nessa frase!\n\n"${quote.text}" — ${quote.author}\n\nVeja mais em: https://cadernobatata.vercel.app`;
 
     try {
@@ -62,14 +64,14 @@ export function QuoteCard({ quote, index }: QuoteCardProps) {
       });
 
       if (!blob) throw new Error("Falha ao gerar imagem");
-      const file = new File([blob], `batatada-${quote.id}.png`, { type: 'image/png' });
+      const file = new File([blob], `batata-${quote.id}.png`, { type: 'image/png' });
 
       // Tenta compartilhar Imagem + Legenda
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
           title: "Caderno Batata",
-          text: caption, // <--- Aqui entra a legenda nova
+          text: caption,
         });
       } else {
         // Se for PC, baixa a imagem
@@ -96,7 +98,7 @@ export function QuoteCard({ quote, index }: QuoteCardProps) {
 
   return (
     <motion.div
-      ref={cardRef} // <--- A câmera aponta pra cá
+      ref={cardRef} // A câmera aponta pra cá (todo o card)
       className={`${bgColor} border-[3px] border-black neo-shadow p-6 flex flex-col break-inside-avoid mb-6 relative`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -107,21 +109,28 @@ export function QuoteCard({ quote, index }: QuoteCardProps) {
        <div className="absolute top-2 right-2 opacity-20 font-black text-[10px] pointer-events-none select-none font-mono tracking-widest">
         CADERNO BATATA
       </div>
+      
+      {/* LINK PARA O MODAL (Intercepting Route)
+         Envolve o Texto e o Autor. Botões ficam de fora para não ativar o link ao curtir.
+      */}
+      <Link href={`/quote/${quote.id}`} scroll={false} className="grow flex flex-col cursor-pointer hover:opacity-80 transition-opacity">
+        
+        {/* Quote Text */}
+        <p className="mt-3 text-xl font-bold text-black mb-6 leading-tight grow z-10">
+          &quot;{quote.text}&quot;
+        </p>
 
-      {/* Quote Text */}
-      <p className="mt-3 text-xl font-bold text-black mb-6 leading-tight grow z-10">
-        &quot;{quote.text}&quot;
-      </p>
-
-      {/* Footer: Author & Date */}
-      <div className="border-t-[3px] border-black pt-4 mb-4 z-10">
-        <div className="flex items-center justify-between">
-          <span className="font-bold text-black text-lg font-sans">— {quote.author}</span>
-          <span className="font-mono text-sm text-black">
-            {new Date(quote.date).toLocaleDateString("pt-BR")}
-          </span>
+        {/* Footer: Author & Date */}
+        <div className="border-t-[3px] border-black pt-4 mb-4 z-10">
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-black text-lg font-sans">— {quote.author}</span>
+            <span className="font-mono text-sm text-black">
+              {new Date(quote.date).toLocaleDateString("pt-BR")}
+            </span>
+          </div>
         </div>
-      </div>
+
+      </Link>
 
       {/* Action Bar: Reactions */}
       {/* 'data-html2canvas-ignore' faz essa div ser INVISÍVEL no print */}
@@ -169,8 +178,6 @@ export function QuoteCard({ quote, index }: QuoteCardProps) {
           {isSharing ? (
             <Loader2 className="w-5 h-5 text-black animate-spin" />
           ) : (
-            // Ícone muda dependendo se é mobile (Share) ou PC (Download) visualmente, 
-            // mas deixei Share2 como padrão pois tenta compartilhar primeiro
             <Share2 className="w-5 h-5 text-black" />
           )}
         </motion.button>
