@@ -3,6 +3,7 @@ import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono, Archivo_Black } from "next/font/google"
 import "./globals.css"
+import { InstallPrompt } from "@/components/install-prompt"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -54,6 +55,7 @@ export default function RootLayout({
       <body className={`font-sans antialiased ${_archivoBlack.variable}`}>
         {children}
         {modal}
+        <InstallPrompt />
       </body>
     </html>
   )
