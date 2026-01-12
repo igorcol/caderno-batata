@@ -65,6 +65,10 @@ export function QuoteCard({ quote, index }: QuoteCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const bgColor = cardBackgrounds[index % cardBackgrounds.length];
 
+  // --- LÓGICA DO BADGE "NOVO" ---
+  // Verifica se o card foi criado há menos de 7 dias (604800000 ms)
+  const isNew = (new Date().getTime() - new Date(quote.date).getTime()) < (7 * 24 * 60 * 60 * 1000);
+
   const handleReaction = async (type: keyof typeof reactions) => {
     setReactions((prev) => ({ ...prev, [type]: prev[type] + 1 }));
     setClickedReaction(type as string);
@@ -124,6 +128,14 @@ export function QuoteCard({ quote, index }: QuoteCardProps) {
        <div className="absolute top-2 right-2 opacity-20 font-black text-[10px] pointer-events-none select-none font-mono tracking-widest">
         CADERNO BATATA
       </div>
+
+      {/* --- BADGE "NOVO" --- */}
+      {isNew && (
+        <div className="absolute -top-3 -left-3 bg-[#00FF00] text-black font-black text-xs px-2 py-1 -rotate-12 border-2 border-black z-20 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] animate-bounce">
+          NOVO
+        </div>
+      )}
+      {/* ------------------- */}
       
       <Link href={`/quote/${quote.id}`} scroll={false} className="grow flex flex-col cursor-pointer hover:opacity-80 transition-opacity">
         
