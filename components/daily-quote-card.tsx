@@ -36,7 +36,7 @@ export function DailyQuoteCard({ quote }: { quote: Quote }) {
         
         {/* Selo de Data  */}
         <div className="absolute -top-3 -right-3 bg-black text-[#FFD700] font-mono text-xs px-2 py-1 rotate-12 border-2 border-[#FFD700] z-20 shadow-[2px_2px_0px_0px_rgba(255,215,0,1)]">
-          {new Date(quote.date).toLocaleDateString('pt-BR')}
+          {new Date(quote.saidAt).toLocaleDateString('pt-BR')}
         </div>
       </div>
     </div>

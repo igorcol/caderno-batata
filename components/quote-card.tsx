@@ -140,10 +140,10 @@ export function QuoteCard({ quote, index }: QuoteCardProps) {
             {/* Data na direita (Coluna com Tempo Relativo em cima) */}
             <div className="flex flex-col items-end">
               <span className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest mb-0.5">
-                {getRelativeTime(quote.date)}
+                {getRelativeTime(quote.saidAt)}
               </span>
               <span className="font-mono text-sm text-black">
-                {new Date(quote.date).toLocaleDateString("pt-BR")}
+                {new Date(quote.saidAt).toLocaleDateString("pt-BR")}
               </span>
             </div>
           </div>

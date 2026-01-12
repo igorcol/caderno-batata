@@ -24,6 +24,11 @@ export default async function Home() {
     text: q.text,
     author: q.author,
     date: q.createdAt.toISOString(),
+    
+    // --- ADICIONE ISSO AQUI 👇 ---
+    saidAt: q.saidAt.toISOString(), 
+    // ----------------------------
+
     reactions: {
       potato: q.reactionPotato,
       fire: q.reactionFire,
@@ -38,6 +43,11 @@ export default async function Home() {
     text: dailyQuoteRaw.text,
     author: dailyQuoteRaw.author,
     date: dailyQuoteRaw.createdAt.toISOString(),
+
+    // --- ADICIONE ISSO AQUI TAMBÉM 👇 ---
+    saidAt: dailyQuoteRaw.saidAt.toISOString(),
+    // ------------------------------------
+
     reactions: {
       potato: dailyQuoteRaw.reactionPotato,
       fire: dailyQuoteRaw.reactionFire,

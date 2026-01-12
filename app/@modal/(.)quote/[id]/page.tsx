@@ -18,6 +18,7 @@ export default async function QuoteModalPage({ params }: { params: Promise<{ id:
     text: quoteData.text,
     author: quoteData.author,
     date: quoteData.createdAt.toISOString(),
+    saidAt: quoteData.saidAt.toISOString(),
     reactions: {
       potato: quoteData.reactionPotato,
       fire: quoteData.reactionFire,

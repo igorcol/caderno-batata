@@ -12,12 +12,13 @@ model Quote {
   id        String   @id @default(uuid())
   text      String
   author    String
-  createdAt DateTime @default(now())
-
+  
+  createdAt DateTime @default(now()) // Data que foi publicada
+  saidAt    DateTime @default(now()) // Data que foi falado
+  
   reactionPotato Int @default(0)
   reactionFire   Int @default(0)
   reactionSkull  Int @default(0)
   reactionPen    Int @default(0)
-
-  approved Boolean @default(true) 
+  approved       Boolean @default(false)
 }

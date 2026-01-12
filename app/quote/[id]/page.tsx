@@ -22,6 +22,7 @@ export default async function QuotePage({ params }: { params: Promise<{ id: stri
     text: quoteData.text,
     author: quoteData.author,
     date: quoteData.createdAt.toISOString(),
+    saidAt: quoteData.saidAt.toISOString(),
     reactions: {
       potato: quoteData.reactionPotato,
       fire: quoteData.reactionFire,

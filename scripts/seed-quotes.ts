@@ -84,7 +84,9 @@ async function main() {
         data: {
           text: text,
           author: finalAuthor,
-          createdAt: finalDate,
+          saidAt: finalDate,
+          // createdAt: o banco vai preencher com AGORA automaticamente
+          
           reactionPotato: 0,
           reactionFire: 0,
           reactionSkull: 0,
