@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma"
 
 import { getDailyQuote } from "@/lib/actions/Quote Actions/get-daily-quote" 
 import { DailyQuoteCard } from "@/components/daily-quote-card"
+import { FeedManager } from "@/components/feed-manager"
 
 export const dynamic = 'force-dynamic'
 
@@ -93,17 +94,8 @@ export default async function Home() {
           TODAS AS BATATADAS
         </h2>
 
-        <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
-          {quotes.map((quote, index) => (
-            <QuoteCard key={quote.id} quote={quote} index={index} />
-          ))}
-          
-          {quotes.length === 0 && (
-            <div className="col-span-full text-center py-20 opacity-50 font-mono">
-              <p>Nenhuma pérola encontrada... Seja o primeiro!</p>
-            </div>
-          )}
-        </div>
+        <FeedManager initialQuotes={quotes} />
+        
       </section>
 
       <ClientPageWrapper />
