@@ -28,7 +28,7 @@ export function FeedManager({ initialQuotes }: { initialQuotes: any[] }) {
         
         <input
           type="text"
-          placeholder="Procure por palavras ou culpados..."
+          placeholder="Procure por palavras ou autores..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full bg-black text-[#FFD700] font-mono text-lg md:text-xl py-4 pl-14 pr-12 border-[3px] border-black neo-shadow placeholder:text-gray-600 focus:outline-none focus:translate-x-1 focus:translate-y-1 focus:shadow-none transition-all"
