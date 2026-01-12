@@ -1,23 +1,24 @@
-
 import { Header } from "@/components/header"
 import { HallOfFame } from "@/components/hall-of-fame"
 import { QuoteCard } from "@/components/quote-card"
-import { prisma } from "@/lib/prisma"
 import { ClientPageWrapper } from "@/components/client-page-wrapper"
+import { prisma } from "@/lib/prisma"
 
-// Força a página a ser dinâmica (sem cache estático), para sempre mostrar frases novas
+import { getDailyQuote } from "@/lib/actions/Quote Actions/get-daily-quote" 
+import { DailyQuoteCard } from "@/components/daily-quote-card"
+
 export const dynamic = 'force-dynamic'
 
 export default async function Home() {
-  // 1. BUSCA DO BANCO DE DADOS (Server Side)
+  // Busca normal (feed)
   const dbQuotes = await prisma.quote.findMany({
-    orderBy: {
-      createdAt: 'desc', // As mais novas aparecem no topo
-    },
+    orderBy: { createdAt: 'desc' },
   })
 
-  // 2. ADAPTAÇÃO DE DADOS (Banco -> Visual)
-  // O banco traz "reactionPotato", o front espera "reactions: { potato: ... }"
+  // Busca a Batatada do Dia
+  const dailyQuoteRaw = await getDailyQuote()
+
+  // Formatação de dados
   const quotes = dbQuotes.map((q) => ({
     id: q.id,
     text: q.text,
@@ -31,8 +32,21 @@ export default async function Home() {
     },
   }))
 
-  // 3. LÓGICA DO HALL DA FAMA
-  // Pega as 3 com mais reações somadas
+  // Formata a Batatada do Dia (se existir)
+  const dailyQuote = dailyQuoteRaw ? {
+    id: dailyQuoteRaw.id,
+    text: dailyQuoteRaw.text,
+    author: dailyQuoteRaw.author,
+    date: dailyQuoteRaw.createdAt.toISOString(),
+    reactions: {
+      potato: dailyQuoteRaw.reactionPotato,
+      fire: dailyQuoteRaw.reactionFire,
+      skull: dailyQuoteRaw.reactionSkull,
+      pen: dailyQuoteRaw.reactionPen,
+    },
+  } : null
+
+  // Hall of Fame 
   const topQuotes = [...quotes]
     .sort((a, b) => {
       const totalA = a.reactions.potato + a.reactions.fire + a.reactions.skull + a.reactions.pen
@@ -45,15 +59,30 @@ export default async function Home() {
     <div className="min-h-screen">
       <Header />
 
-      <HallOfFame topQuotes={topQuotes} />
+      {/* SEÇÃO HERO: Grid Assimétrico */}
+      <section className="container mx-auto px-4 mt-8 mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          {/* ESQUERDA: Hall of Fame */}
+          <div className="lg:col-span-8">
+            <HallOfFame topQuotes={topQuotes} />
+          </div>
 
-      {/* Main Feed */}
+          {/* DIREITA: Batatada do Dia */}
+          {dailyQuote && (
+            <div className="lg:col-span-4 lg:mt-28">
+              <DailyQuoteCard quote={dailyQuote} />
+            </div>
+          )}
+          
+        </div>
+      </section>
+
       <section id="main-feed" className="container mx-auto px-4 py-12">
         <h2 className="font-sans font-black text-3xl md:text-4xl text-center mb-8 bg-black text-[#FFD700] block px-8 py-4 border-[3px] border-black neo-shadow mx-auto w-fit transform -rotate-1">
           TODAS AS BATATADAS
         </h2>
 
-        {/* Masonry Grid */}
         <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
           {quotes.map((quote, index) => (
             <QuoteCard key={quote.id} quote={quote} index={index} />
@@ -67,7 +96,6 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Componente Cliente para controlar o Modal (já que esta página agora é Server) */}
       <ClientPageWrapper />
     </div>
   )
