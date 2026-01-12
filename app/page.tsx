@@ -1,6 +1,5 @@
 import { Header } from "@/components/header"
 import { HallOfFame } from "@/components/hall-of-fame"
-import { QuoteCard } from "@/components/quote-card"
 import { ClientPageWrapper } from "@/components/client-page-wrapper"
 import { prisma } from "@/lib/prisma"
 
