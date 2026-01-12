@@ -51,35 +51,44 @@ export function QuoteCard({ quote, index }: QuoteCardProps) {
     if (cardRef.current === null || isSharing) return;
     setIsSharing(true);
 
+    // Texto padrão da legenda
+    const caption = `🥔 Dá uma olhada nessa frase!\n\n"${quote.text}" — ${quote.author}\n\nVeja mais em: https://cadernobatata.vercel.app`;
+
     try {
-      // gera o BLOB para tentar compartilhar nativo
       const blob = await htmlToImage.toBlob(cardRef.current, {
         quality: 1.0,
-        backgroundColor: '#fff', // fundo branco/correto
-        pixelRatio: 2, // Alta resolução
+        backgroundColor: '#fff',
+        pixelRatio: 2,
       });
 
       if (!blob) throw new Error("Falha ao gerar imagem");
+      const file = new File([blob], `batatada-${quote.id}.png`, { type: 'image/png' });
 
-      const file = new File([blob], `batata-${quote.id}.png`, { type: 'image/png' });
-
-      // Tenta compartilhar nativo (Celular: Zap, Insta, etc)
+      // Tenta compartilhar Imagem + Legenda
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
-          title: "Caderno Batata",
-          text: `"${quote.text}" — ${quote.author}`,
           files: [file],
+          title: "Caderno Batata",
+          text: caption, // <--- Aqui entra a legenda nova
         });
       } else {
-        // Baixa a imagem se não der pra compartilhar
+        // Se for PC, baixa a imagem
         download(blob, `batata-${quote.author.toLowerCase().replace(/\s/g, "-")}.png`);
+        
+        // E copia a legenda pro clipboard pra facilitar
+        await navigator.clipboard.writeText(caption);
+        alert("Imagem baixada e legenda copiada! 🥔");
       }
-
     } catch (error) {
-      console.error("Erro ao compartilhar imagem:", error);
-      // se der errado, copia só o texto
-      navigator.clipboard.writeText(`"${quote.text}" — ${quote.author} \n\nConfira no Caderno Batata!`);
-      alert("Imagem falhou, mas copiei o texto para você!");
+      console.error("Erro ao gerar imagem:", error);
+      // Fallback: Compartilha só o texto se a imagem falhar
+      if (navigator.share) {
+         navigator.share({
+            title: "Caderno Batata",
+            text: caption,
+            url: "https://cadernobatata.vercel.app"
+         });
+      }
     } finally {
       setIsSharing(false);
     }
