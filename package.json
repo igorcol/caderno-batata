@@ -4,10 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build", 
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate" 
+    "postinstall": "prisma generate",
+    "seed:quotes": "ts-node scripts/seed-quotes.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.19.1",
@@ -30,6 +31,7 @@
     "eslint-config-next": "16.1.1",
     "prisma": "^5.19.1",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
 }
