@@ -4,6 +4,7 @@ import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono, Archivo_Black } from "next/font/google"
 import "./globals.css"
 import { InstallPrompt } from "@/components/install-prompt"
+import { OneSignalInit } from "@/components/one-signal-init"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -56,6 +57,7 @@ export default function RootLayout({
         {children}
         {modal}
         <InstallPrompt />
+        <OneSignalInit />
       </body>
     </html>
   )

@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
+import { sendPushNotification } from "../Notifications/send-push-notification" 
 
 const MOCKED_PASS = "caderno@batata"
 
-// Adicionei o campo date aqui na tipagem
 export async function submitQuote(data: { quote: string; author: string; password: string; date: string }) {
   
   if (data.password !== MOCKED_PASS) {
@@ -13,18 +13,28 @@ export async function submitQuote(data: { quote: string; author: string; passwor
   }
 
   try {
-    const customDate = new Date(data.date + "T12:00:00")
+    // data que a pessoa falou 
+    const dateSaid = new Date(data.date + "T12:00:00")
 
-    await prisma.quote.create({
+    // CRIA NO BANCO
+    const newQuote = await prisma.quote.create({
       data: {
         text: data.quote,
         author: data.author,
-        createdAt: customDate, 
+        saidAt: dateSaid,       // Data antiga (histórica)
+        createdAt: new Date(),  // Data de agora (para aparecer como NOVO)
       },
     })
 
+    // DISPARA A NOTIFICAÇÃO 
+    try {
+        await sendPushNotification(newQuote.text, newQuote.author);
+    } catch (pushError) {
+        console.error("Falha ao enviar push, mas a frase foi salva:", pushError);
+    }
+
     revalidatePath("/")
-    return { success: true, message: "Batatada eternizada com sucesso! 🚀" }
+    return { success: true, message: "Batatada publicada! 🚀" }
 
   } catch (error) {
     console.error("Erro ao salvar:", error)
