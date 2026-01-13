@@ -89,7 +89,7 @@ export default async function Home() {
         </div>
       </section>
       
-      <SubscriptionButton />
+      {/* <SubscriptionButton /> */}
 
       <section id="main-feed" className="container mx-auto px-4 py-12">
         <h2 className="font-sans font-black text-3xl md:text-4xl text-center mb-8 bg-black text-[#FFD700] block px-8 py-4 border-[3px] border-black neo-shadow mx-auto w-fit transform -rotate-1">
